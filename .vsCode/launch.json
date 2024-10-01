@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Simulated environment",
+            "cwd": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=use_simulated_environment=true"
+            ]
+        },
+        {
+            "name": "Launch example App",
+            "request": "launch",
+            "type": "dart",
+            "program": "example/lib/main_development.dart",
+            "args": [
+                "--flavor",
+                "development",
+                "--target",
+                "lib/main_development.dart"
+            ]
+        }
+    ]
+}
