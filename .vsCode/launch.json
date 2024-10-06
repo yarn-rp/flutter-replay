@@ -1,10 +1,11 @@
 {
     "configurations": [
+
         {
-            "name": "Simulated environment",
-            "cwd": "lib/main.dart",
+            "name": "Simulated environement",
             "request": "launch",
             "type": "dart",
+            "program": "flutter_replay/lib/main.dart",
             "args": [
                 "--dart-define=use_simulated_environment=true"
             ]

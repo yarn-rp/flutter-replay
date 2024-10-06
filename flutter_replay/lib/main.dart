@@ -1,5 +1,7 @@
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_replay/bloc/logs_bloc_bloc.dart';
 import 'package:replay_logger_dev_ext/replay_logger_dev_ext.dart';
 
 void main() {
@@ -11,10 +13,13 @@ class FlutterReplayDevtoolsExtensionApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DevToolsExtension(
-      child: BlocLogsPage(
-        loggerClient: ReplayLoggerClient.instance,
-      ), // Build your extension here
+    return BlocProvider(
+      create: (context) => LogsBloc(
+        replayLoggerClient: ReplayLoggerClient.instance,
+      ),
+      child: const DevToolsExtension(
+        child: BlocLogsPage(), // Build your extension here
+      ),
     );
   }
 }
@@ -22,62 +27,103 @@ class FlutterReplayDevtoolsExtensionApp extends StatelessWidget {
 class BlocLogsPage extends StatefulWidget {
   const BlocLogsPage({
     super.key,
-    required this.loggerClient,
   });
-
-  final ReplayLoggerClient loggerClient;
 
   @override
   State<BlocLogsPage> createState() => _BlocLogsPageState();
 }
 
 class _BlocLogsPageState extends State<BlocLogsPage> {
-  List<LogEntry> logs = [];
-
-  @override
-  void initState() {
-    super.initState();
-    setupSubs();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void setupSubs() {
-    widget.loggerClient.pollLogs().listen((event) {
-      setState(() {
-        logs = event;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final hasLogs = context.select(
+      (LogsBloc bloc) => bloc.state.logs.isNotEmpty,
+    );
+
+    print('hasLogs: $hasLogs');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Replay'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: logs.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(
-                    logs[index].message.toString(),
-                  ),
-                  subtitle: Text(
-                    logs[index].eventTime.toString(),
-                  ),
-                );
-              },
-            ),
+      body: BlocLogsSuccess(),
+    );
+  }
+}
+
+class BlocLogsSuccess extends StatelessWidget {
+  const BlocLogsSuccess({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Create a navigation rail with the log resources and the respective log entries
+
+    final resources = context.select(
+      (LogsBloc bloc) => bloc.state.logs.keys.toList(),
+    );
+    final selectedResource = context.select(
+      (LogsBloc bloc) => bloc.state.selectedResource,
+    );
+    return Row(
+      children: [
+        SizedBox(
+          width: 200,
+          height: double.infinity,
+          child: ListView.builder(
+            itemCount: resources.length,
+            itemBuilder: (context, index) {
+              final resource = resources[index];
+
+              return ListTile(
+                title: Text(resource),
+                onTap: () {
+                  context
+                      .read<LogsBloc>()
+                      .add(LogResourceSelected(resource: resource));
+                },
+                selected: resource == selectedResource,
+              );
+            },
           ),
-        ],
-      ),
+        ),
+        const VerticalDivider(),
+        Expanded(
+          child: selectedResource != null
+              ? SelectedResourceLogs(
+                  selectedResource: selectedResource,
+                )
+              : const Center(
+                  child: Text('Select a resource to view logs'),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class SelectedResourceLogs extends StatelessWidget {
+  const SelectedResourceLogs({super.key, required this.selectedResource});
+
+  final String selectedResource;
+
+  @override
+  Widget build(BuildContext context) {
+    final logs = context.select(
+      (LogsBloc bloc) => bloc.state.logs,
+    );
+
+    final logEntries = logs[selectedResource] ?? [];
+
+    return ListView.builder(
+      itemCount: logEntries.length,
+      itemBuilder: (context, index) {
+        final logEntry = logEntries[index];
+
+        return ListTile(
+          title: Text(logEntry.message.toString()),
+          subtitle: Text('At ${logEntry.eventTime}'),
+        );
+      },
     );
   }
 }

@@ -12,50 +12,28 @@ const _extensionName = 'ext.flutterReplay.getMessages';
 /// {@endtemplate}
 class ReplayLogger {
   /// {@macro replay_logger}
-  factory ReplayLogger({
-    required LogDataSource dataSource,
-    required int initialElapsedMilliseconds,
+  ReplayLogger({
+    required this.dataSource,
+    required this.initialElapsedMilliseconds,
   }) {
-    _instance._initialize(dataSource, initialElapsedMilliseconds);
-    return _instance;
-  }
-  ReplayLogger._internal();
-
-  /// The singleton instance of [ReplayLogger].
-  static final ReplayLogger _instance = ReplayLogger._internal();
-
-  bool _isInitialized = false;
-
-  /// The initial elapsed milliseconds since epoch.
-  late int initialElapsedMilliseconds;
-
-  /// A data source containing the logs.
-  late LogDataSource dataSource;
-
-  void _initialize(LogDataSource dataSource, int initialElapsedMilliseconds) {
-    if (_isInitialized) return;
-
-    this.dataSource = dataSource;
-    this.initialElapsedMilliseconds = initialElapsedMilliseconds;
-
     // This extension registers a method that can get a value from the state of
     // the app.
     registerExtension(_extensionName, (method, parameters) async {
       // Respond with a JSON message, indicating the value.
+      final logs = dataSource.getLogs();
+      final logsJson = logs.map((log) => jsonEncode(log.toJson())).toList();
+
       return ServiceExtensionResponse.result(
-        jsonEncode({'messages': jsonEncode(dataSource.getLogs())}),
+        jsonEncode({'messages': jsonEncode(logsJson)}),
       );
     });
-
-    dataSource.getLogsStream().listen(
-          (event) => logMessage(
-            event.message,
-            event.stackTrace,
-          ),
-        );
-
-    _isInitialized = true;
   }
+
+  /// The initial elapsed milliseconds since epoch.
+  final int initialElapsedMilliseconds;
+
+  /// A data source containing the logs.
+  final LogDataSource dataSource;
 
   /// Utility method to get the relative elapsed milliseconds.
   int relativeElapsedMilliseconds(int eventTime) =>
@@ -63,6 +41,7 @@ class ReplayLogger {
 
   /// Logs a message with the given [message] and [stackTrace].
   Future<void> logMessage(
+    String resource,
     Map<String, dynamic> message,
     StackTrace stackTrace,
   ) async {
@@ -71,9 +50,10 @@ class ReplayLogger {
     );
 
     final logEvent = LogEntry(
+      resource: resource,
       message: message,
       eventTime: relativeTime,
-      stackTrace: stackTrace,
+      // stackTrace: stackTrace,
     );
 
     await dataSource.log(logEvent);

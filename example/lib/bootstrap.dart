@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:replay_logger/replay_logger.dart';
-import 'package:very_good_counter/counter/cubit/counter_cubit.dart';
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -27,7 +26,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     log(details.exceptionAsString(), stackTrace: details.stack);
   };
 
-  Bloc.observer = CubitStatesLogger(
+  Bloc.observer = ReplayBlocObserver(
     replayLogger: ReplayLogger(
       dataSource: InMemoryLogDataSource(),
       initialElapsedMilliseconds: DateTime.now().millisecondsSinceEpoch,

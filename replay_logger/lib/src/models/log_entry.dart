@@ -1,31 +1,34 @@
 class LogEntry {
   const LogEntry({
+    required this.resource,
     required this.message,
     required this.eventTime,
-    required this.stackTrace,
+    this.stackTrace,
   });
 
+  final String resource;
   final Map<String, dynamic> message;
   final int eventTime;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   factory LogEntry.fromJson(Map<String, dynamic> json) {
+    final resource = json['resource'] as String;
     final message = json['message'] as Map<String, dynamic>;
     final eventTime = json['eventTime'] as int;
-    final stackTrace = StackTrace.fromString(json['stackTrace'] as String);
 
     return LogEntry(
+      resource: resource,
       message: message,
       eventTime: eventTime,
-      stackTrace: stackTrace,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'resource': resource,
       'message': message,
       'eventTime': eventTime,
-      'stackTrace': stackTrace,
+      // 'stackTrace': stackTrace.toString(),
     };
   }
 }
