@@ -34,33 +34,19 @@ class ReplayLoggerClient {
     if (!isConnectedToApp) {
       return null;
     }
-    print('Getting logs');
-    try {
-      final response = await serviceManager
-          .callServiceExtensionOnMainIsolate(_extensionName);
+    final response =
+        await serviceManager.callServiceExtensionOnMainIsolate(_extensionName);
 
-      print('response: $response');
+    final responseMessages =
+        jsonDecode(response.json?['messages'] as String) ?? <String>[];
 
-      final responseMessages =
-          jsonDecode(response.json?['messages'] as String) ?? <String>[];
+    final responseDecoded = (responseMessages as List<dynamic>)
+        .map((e) => jsonDecode(e as String) as Map<String, dynamic>)
+        .toList();
 
-      final responseDecoded = (responseMessages as List<dynamic>).map((e) {
-        try {
-          return jsonDecode(e.toString()) as Map<String, dynamic>;
-        } catch (e) {
-          print('Error decoding log entry: $e');
-          rethrow;
-        }
-      }).toList();
+    final logsList = responseDecoded.map(LogEntry.fromJson).toList();
 
-      print('responseDecoded: $responseDecoded');
-      final logsList = responseDecoded.map(LogEntry.fromJson).toList();
-      print('logsList: $logsList');
-      return logsList;
-    } catch (e) {
-      print('Error getting logs: $e');
-      return [];
-    }
+    return logsList;
   }
 
   Stream<List<LogEntry>?> pollLogs([
@@ -74,5 +60,17 @@ class ReplayLoggerClient {
     await for (final logs in pollStream) {
       yield logs;
     }
+  }
+
+  Stream<List<BlocLogEntry>?> pollBlocLogs([
+    Duration every = const Duration(seconds: 1),
+  ]) {
+    return pollLogs(every).map((logs) {
+      if (logs == null) {
+        return null;
+      }
+
+      return logs.whereType<BlocLogEntry>().toList();
+    });
   }
 }

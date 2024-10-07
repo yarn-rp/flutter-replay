@@ -14,14 +14,12 @@ class InMemoryLogDataSource implements LogDataSource {
 
   @override
   Future<void> log(LogEntry event) async {
-    print('Logging event: ${event.toJson()}');
     _logs.add(event);
     _logsStreamController.add(event);
   }
 
   @override
   Stream<LogEntry> getLogsStream() {
-    print('Getting logs stream');
     return _logsStreamController.stream;
   }
 

@@ -21,7 +21,9 @@ class ReplayLogger {
     registerExtension(_extensionName, (method, parameters) async {
       // Respond with a JSON message, indicating the value.
       final logs = dataSource.getLogs();
-      final logsJson = logs.map((log) => jsonEncode(log.toJson())).toList();
+      final logsJson =
+          // ignore: unnecessary_cast
+          logs.map((log) => jsonEncode(log.toJson())).toList();
 
       return ServiceExtensionResponse.result(
         jsonEncode({'messages': jsonEncode(logsJson)}),
@@ -36,24 +38,154 @@ class ReplayLogger {
   final LogDataSource dataSource;
 
   /// Utility method to get the relative elapsed milliseconds.
-  int relativeElapsedMilliseconds(int eventTime) =>
-      eventTime - initialElapsedMilliseconds;
+  int relativeElapsedMilliseconds(int timestamp) =>
+      timestamp - initialElapsedMilliseconds;
 
   /// Logs a message with the given [message] and [stackTrace].
-  Future<void> logMessage(
-    String resource,
-    Map<String, dynamic> message,
-    StackTrace stackTrace,
-  ) async {
+  Future<void> logMessage({
+    required String resource,
+    required String message,
+    required Map<String, dynamic> metadata,
+    StackTrace? stackTrace,
+  }) async {
     final relativeTime = relativeElapsedMilliseconds(
       DateTime.now().millisecondsSinceEpoch,
     );
 
-    final logEvent = LogEntry(
-      resource: resource,
+    final logEvent = GenericLogEntry(
       message: message,
-      eventTime: relativeTime,
-      // stackTrace: stackTrace,
+      resource: resource,
+      metadata: metadata,
+      timestamp: relativeTime,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs a creation event.
+  Future<void> logBlocCreation({
+    required String resource,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocCreationLogEntry(
+      blocEventType: BlocEventType.creation,
+      resource: resource,
+      timestamp: relativeTime,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs an event.
+  Future<void> logBlocEvent({
+    required String resource,
+    required Map<String, dynamic> eventData,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocEventLogEntry(
+      blocEventType: BlocEventType.event,
+      resource: resource,
+      timestamp: relativeTime,
+      eventData: eventData,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs a state change.
+  Future<void> logBlocStateChange({
+    required String resource,
+    required Map<String, dynamic> currentStateData,
+    required Map<String, dynamic> nextStateData,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocStateChangeLogEntry(
+      blocEventType: BlocEventType.stateChange,
+      resource: resource,
+      timestamp: relativeTime,
+      currentStateData: currentStateData,
+      nextStateData: nextStateData,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs a state transition.
+  Future<void> logBlocStateTransition({
+    required String resource,
+    required Map<String, dynamic> currentStateData,
+    required Map<String, dynamic> eventData,
+    required Map<String, dynamic> nextStateData,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocStateTransitionLogEntry(
+      blocEventType: BlocEventType.stateTransition,
+      resource: resource,
+      timestamp: relativeTime,
+      currentStateData: currentStateData,
+      eventData: eventData,
+      nextStateData: nextStateData,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs an error.
+  Future<void> logBlocError({
+    required String resource,
+    required Map<String, dynamic> errorData,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocErrorLogEntry(
+      blocEventType: BlocEventType.error,
+      resource: resource,
+      timestamp: relativeTime,
+      errorData: errorData,
+      stackTrace: stackTrace,
+    );
+
+    await dataSource.log(logEvent);
+  }
+
+  /// Logs a close event.
+  Future<void> logBlocClose({
+    required String resource,
+    StackTrace? stackTrace,
+  }) async {
+    final relativeTime = relativeElapsedMilliseconds(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    final logEvent = BlocCloseLogEntry(
+      blocEventType: BlocEventType.close,
+      resource: resource,
+      timestamp: relativeTime,
+      stackTrace: stackTrace,
     );
 
     await dataSource.log(logEvent);

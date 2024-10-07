@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "2.0.0"
   devtools_app_shared:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: devtools_app_shared
       sha256: "7c5ffac115f441d563b2f1ea2f0a14e2e0960aa8648fe151b0e372574e061111"
@@ -216,6 +216,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   json_rpc_2:
     dependency: transitive
     description:
